@@ -8,9 +8,15 @@ local mod = {}
 if platform.is_mac then
    mod.SUPER = 'SUPER'
    mod.SUPER_REV = 'SUPER|CTRL'
+   mod.TMUX_LEADER = 'LEADER'
+   mod.TMUX_CTRL_SHIFT = 'CTRL|SHIFT'
 elseif platform.is_win or platform.is_linux then
    mod.SUPER = 'ALT' -- to not conflict with Windows key shortcuts
    mod.SUPER_REV = 'ALT|CTRL'
+   mod.SUPER_SHIFT = 'SHIFT|ALT'
+   mod.SUPER_SHIFT_REV = 'SHIFT|ALT|CTRL'
+   mod.TMUX_LEADER = 'LEADER'
+   mod.TMUX_CTRL_SHIFT = 'CTRL|SHIFT'
 end
 
 -- stylua: ignore
@@ -59,15 +65,15 @@ local keys = {
 
    -- tabs --
    -- tabs: spawn+close
-   { key = 't',          mods = mod.SUPER,     action = act.SpawnTab('DefaultDomain') },
+   { key = 't',          mods = mod.TMUX_LEADER,     action = act.SpawnTab('DefaultDomain') },
    { key = 't',          mods = mod.SUPER_REV, action = act.SpawnTab({ DomainName = 'WSL:Ubuntu' }) },
-   { key = 'w',          mods = mod.SUPER_REV, action = act.CloseCurrentTab({ confirm = false }) },
+   { key = 'd',          mods = mod.TMUX_LEADER, action = act.CloseCurrentTab({ confirm = true }) },
 
    -- tabs: navigation
-   { key = '[',          mods = mod.SUPER,     action = act.ActivateTabRelative(-1) },
-   { key = ']',          mods = mod.SUPER,     action = act.ActivateTabRelative(1) },
-   { key = '[',          mods = mod.SUPER_REV, action = act.MoveTabRelative(-1) },
-   { key = ']',          mods = mod.SUPER_REV, action = act.MoveTabRelative(1) },
+   { key = '(',          mods = mod.TMUX_CTRL_SHIFT,     action = act.ActivateTabRelative(-1) },
+   { key = ')',          mods = mod.TMUX_CTRL_SHIFT,     action = act.ActivateTabRelative(1) },
+   { key = '[',          mods = mod.TMUX_LEADER, action = act.MoveTabRelative(-1) },
+   { key = ']',          mods = mod.TMUX_LEADER, action = act.MoveTabRelative(1) },
 
    -- tab: title
    { key = '0',          mods = mod.SUPER,     action = act.EmitEvent('tabs.manual-update-tab-title') },
@@ -96,7 +102,7 @@ local keys = {
    },
    {
       key = '=',
-      mods = mod.SUPER,
+      mods = mod.SUPER_SHIFT,
       action = wezterm.action_callback(function(window, _pane)
          local dimensions = window:get_dimensions()
          if dimensions.is_full_screen then
@@ -107,11 +113,24 @@ local keys = {
          window:set_inner_size(new_width, new_height)
       end)
    },
+   
+   {
+      key = 'r',
+      mods = mod.TMUX_LEADER,
+      action = wezterm.action.PromptInputLine {
+        description = "Enter new tab name",
+        action = wezterm.action_callback(function(window, pane, line)
+          if line then
+            window:active_tab():set_title(line)
+          end
+        end),
+		},
+   },
 
    -- background controls --
    {
       key = [[/]],
-      mods = mod.SUPER,
+      mods = mod.SUPER_SHIFT,
       action = wezterm.action_callback(function(window, _pane)
          backdrops:random(window)
       end),
@@ -132,7 +151,7 @@ local keys = {
    },
    {
       key = [[/]],
-      mods = mod.SUPER_REV,
+      mods = mod.SUPER_SHIFT_REV,
       action = act.InputSelector({
          title = 'InputSelector: Select Background',
          choices = backdrops:choices(),
@@ -158,14 +177,22 @@ local keys = {
    -- panes --
    -- panes: split panes
    {
-      key = [[\]],
-      mods = mod.SUPER,
+      key = [[-]],
+      mods = mod.TMUX_LEADER,
       action = act.SplitVertical({ domain = 'CurrentPaneDomain' }),
    },
    {
-      key = [[\]],
-      mods = mod.SUPER_REV,
+      key = [[|]],
+      mods = mod.TMUX_LEADER,
       action = act.SplitHorizontal({ domain = 'CurrentPaneDomain' }),
+   },
+   
+   {
+      key = '1',
+      mods = mod.TMUX_LEADER,
+      action = wezterm.action_callback(function(win, pane)
+        local tab, window = pane:move_to_new_tab()
+      end),
    },
 
    -- panes: zoom+close pane
@@ -173,10 +200,10 @@ local keys = {
    { key = 'w',     mods = mod.SUPER,     action = act.CloseCurrentPane({ confirm = false }) },
 
    -- panes: navigation
-   { key = 'k',     mods = mod.SUPER_REV, action = act.ActivatePaneDirection('Up') },
-   { key = 'j',     mods = mod.SUPER_REV, action = act.ActivatePaneDirection('Down') },
-   { key = 'h',     mods = mod.SUPER_REV, action = act.ActivatePaneDirection('Left') },
-   { key = 'l',     mods = mod.SUPER_REV, action = act.ActivatePaneDirection('Right') },
+   { key = 'UpArrow',     mods = mod.TMUX_CTRL_SHIFT, action = act.ActivatePaneDirection('Up') },
+   { key = 'DownArrow',     mods = mod.TMUX_CTRL_SHIFT, action = act.ActivatePaneDirection('Down') },
+   { key = 'LeftArrow',     mods = mod.TMUX_CTRL_SHIFT, action = act.ActivatePaneDirection('Left') },
+   { key = 'RightArrow',     mods = mod.TMUX_CTRL_SHIFT, action = act.ActivatePaneDirection('Right') },
    {
       key = 'p',
       mods = mod.SUPER_REV,
@@ -243,7 +270,8 @@ local mouse_bindings = {
 return {
    disable_default_key_bindings = true,
    -- disable_default_mouse_bindings = true,
-   leader = { key = 'Space', mods = mod.SUPER_REV },
+   -- leader = { key = 'Space', mods = mod.SUPER_REV },
+   leader = { key = 'b', mods = 'CTRL', timeout_milliseconds = 1000 },
    keys = keys,
    key_tables = key_tables,
    mouse_bindings = mouse_bindings,
