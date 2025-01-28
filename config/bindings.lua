@@ -10,6 +10,8 @@ if platform.is_mac then
    mod.SUPER_REV = 'SUPER|CTRL'
    mod.TMUX_LEADER = 'LEADER'
    mod.TMUX_CTRL_SHIFT = 'CTRL|SHIFT'
+   mod.SUPER_SHIFT = 'SHIFT|SUPER'
+   mod.SUPER_SHIFT_REV = 'SHIFT|SUPER|CTRL'
 elseif platform.is_win or platform.is_linux then
    mod.SUPER = 'ALT' -- to not conflict with Windows key shortcuts
    mod.SUPER_REV = 'ALT|CTRL'
